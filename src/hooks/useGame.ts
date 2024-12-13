@@ -14,14 +14,24 @@ const INITIAL_STATE: GameState = {
   autoViewsPerSecond: 0,
   trendPoints: 0,
   lastUpdate: Date.now(),
-  buildings: {} as Record<BuildingType, number>,
+  buildings: Object.fromEntries(BUILDINGS.map(b => [b.id, 0])), // Initialize all buildings with 0
   upgrades: {},
 };
 
 export function useGame() {
   const [gameState, setGameState] = useState<GameState>(() => {
-    const saved = localStorage.getItem('viralClickerState');
-    return saved ? JSON.parse(saved) : INITIAL_STATE;
+    try {
+      const saved = localStorage.getItem('viralClickerState');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        // Ensure all buildings exist in loaded state
+        const buildings = { ...Object.fromEntries(BUILDINGS.map(b => [b.id, 0])), ...parsed.buildings };
+        return { ...INITIAL_STATE, ...parsed, buildings };
+      }
+    } catch (error) {
+      console.error('Error loading game state:', error);
+    }
+    return INITIAL_STATE;
   });
 
   const calculateAutoViewsPerSecond = useCallback((buildings: Record<BuildingType, number>) => {
